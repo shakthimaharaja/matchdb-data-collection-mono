@@ -155,9 +155,7 @@ export default function AdminDashboard() {
                     <button
                       className="btn btn-ghost btn-sm admin-expand-btn"
                       onClick={() =>
-                        setExpanded(
-                          expanded === u.user.id ? null : u.user.id,
-                        )
+                        setExpanded(expanded === u.user.id ? null : u.user.id)
                       }
                     >
                       {expanded === u.user.id

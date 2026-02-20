@@ -7,8 +7,18 @@ import * as XLSX from "xlsx";
 function buildCandidateDupQuery(name: string, email: string, userId: any) {
   return {
     uploaded_by: userId,
-    name:  { $regex: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`, "i") },
-    email: { $regex: new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`, "i") },
+    name: {
+      $regex: new RegExp(
+        `^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
+        "i",
+      ),
+    },
+    email: {
+      $regex: new RegExp(
+        `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
+        "i",
+      ),
+    },
   };
 }
 
@@ -24,7 +34,7 @@ export async function createCandidate(req: AuthRequest, res: Response) {
     // ── Duplicate check — flag but still save ────────────────
     if (data.name && data.email) {
       const existing = await CandidateData.findOne(
-        buildCandidateDupQuery(data.name, data.email, req.userId)
+        buildCandidateDupQuery(data.name, data.email, req.userId),
       ).lean();
       if (existing) {
         data.is_duplicate = true;
@@ -58,7 +68,7 @@ export async function createBulkCandidates(req: AuthRequest, res: Response) {
     for (const rec of records) {
       if (rec.name && rec.email) {
         const dup = await CandidateData.findOne(
-          buildCandidateDupQuery(rec.name, rec.email, req.userId)
+          buildCandidateDupQuery(rec.name, rec.email, req.userId),
         ).lean();
         if (dup) {
           rec.is_duplicate = true;
@@ -108,25 +118,26 @@ export async function deleteCandidate(req: AuthRequest, res: Response) {
 export async function getStats(req: AuthRequest, res: Response) {
   try {
     const filter = { uploaded_by: req.userId };
-    const [total, paste, manual, excel, duplicates, byMonth] = await Promise.all([
-      CandidateData.countDocuments(filter),
-      CandidateData.countDocuments({ ...filter, source: "paste" }),
-      CandidateData.countDocuments({ ...filter, source: "manual" }),
-      CandidateData.countDocuments({ ...filter, source: "excel" }),
-      CandidateData.countDocuments({ ...filter, is_duplicate: true }),
-      CandidateData.aggregate([
-        { $match: filter },
-        {
-          $group: {
-            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
-            count: { $sum: 1 },
-            duplicates: { $sum: { $cond: ["$is_duplicate", 1, 0] } },
+    const [total, paste, manual, excel, duplicates, byMonth] =
+      await Promise.all([
+        CandidateData.countDocuments(filter),
+        CandidateData.countDocuments({ ...filter, source: "paste" }),
+        CandidateData.countDocuments({ ...filter, source: "manual" }),
+        CandidateData.countDocuments({ ...filter, source: "excel" }),
+        CandidateData.countDocuments({ ...filter, is_duplicate: true }),
+        CandidateData.aggregate([
+          { $match: filter },
+          {
+            $group: {
+              _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+              count: { $sum: 1 },
+              duplicates: { $sum: { $cond: ["$is_duplicate", 1, 0] } },
+            },
           },
-        },
-        { $sort: { _id: -1 } },
-        { $limit: 12 },
-      ]),
-    ]);
+          { $sort: { _id: -1 } },
+          { $limit: 12 },
+        ]),
+      ]);
     res.json({
       total,
       duplicates,
@@ -208,12 +219,9 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
       .filter((c) => c.name && c.email);
 
     if (candidates.length === 0) {
-      res
-        .status(400)
-        .json({
-          error:
-            'No valid rows found. Ensure "name" and "email" columns exist.',
-        });
+      res.status(400).json({
+        error: 'No valid rows found. Ensure "name" and "email" columns exist.',
+      });
       return;
     }
 
@@ -222,7 +230,7 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
     for (const c of candidates) {
       if (c.name && c.email) {
         const dup = await CandidateData.findOne(
-          buildCandidateDupQuery(c.name, c.email, req.userId)
+          buildCandidateDupQuery(c.name, c.email, req.userId),
         ).lean();
         if (dup) {
           (c as any).is_duplicate = true;

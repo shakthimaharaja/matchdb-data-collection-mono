@@ -95,7 +95,12 @@ export async function aiParseJob(req: Request, res: Response) {
         if (key === "skills_required") cleaned[key] = [];
         else if (
           typeof value === "number" ||
-          ["salary_min", "salary_max", "pay_per_hour", "experience_required"].includes(key)
+          [
+            "salary_min",
+            "salary_max",
+            "pay_per_hour",
+            "experience_required",
+          ].includes(key)
         )
           cleaned[key] = undefined;
         else cleaned[key] = "";

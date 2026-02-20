@@ -4,12 +4,32 @@ import JobData from "../models/JobData.model.js";
 import * as XLSX from "xlsx";
 
 // ── Duplicate detection helper ────────────────────────────
-function buildDuplicateQuery(title: string, company: string, location: string, userId: any) {
+function buildDuplicateQuery(
+  title: string,
+  company: string,
+  location: string,
+  userId: any,
+) {
   return {
     uploaded_by: userId,
-    title:    { $regex: new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`, "i") },
-    company:  { $regex: new RegExp(`^${company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`, "i") },
-    location: { $regex: new RegExp(`^${location.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`, "i") },
+    title: {
+      $regex: new RegExp(
+        `^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
+        "i",
+      ),
+    },
+    company: {
+      $regex: new RegExp(
+        `^${company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
+        "i",
+      ),
+    },
+    location: {
+      $regex: new RegExp(
+        `^${location.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
+        "i",
+      ),
+    },
   };
 }
 
@@ -25,7 +45,12 @@ export async function createJob(req: AuthRequest, res: Response) {
     // ── Duplicate check — flag but still save ────────────────
     if (data.title && data.company && data.location) {
       const existing = await JobData.findOne(
-        buildDuplicateQuery(data.title, data.company, data.location, req.userId)
+        buildDuplicateQuery(
+          data.title,
+          data.company,
+          data.location,
+          req.userId,
+        ),
       ).lean();
       if (existing) {
         data.is_duplicate = true;
@@ -59,7 +84,7 @@ export async function createBulkJobs(req: AuthRequest, res: Response) {
     for (const rec of records) {
       if (rec.title && rec.company && rec.location) {
         const dup = await JobData.findOne(
-          buildDuplicateQuery(rec.title, rec.company, rec.location, req.userId)
+          buildDuplicateQuery(rec.title, rec.company, rec.location, req.userId),
         ).lean();
         if (dup) {
           rec.is_duplicate = true;
@@ -109,25 +134,26 @@ export async function deleteJob(req: AuthRequest, res: Response) {
 export async function getStats(req: AuthRequest, res: Response) {
   try {
     const filter = { uploaded_by: req.userId };
-    const [total, paste, manual, excel, duplicates, byMonth] = await Promise.all([
-      JobData.countDocuments(filter),
-      JobData.countDocuments({ ...filter, source: "paste" }),
-      JobData.countDocuments({ ...filter, source: "manual" }),
-      JobData.countDocuments({ ...filter, source: "excel" }),
-      JobData.countDocuments({ ...filter, is_duplicate: true }),
-      JobData.aggregate([
-        { $match: filter },
-        {
-          $group: {
-            _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
-            count: { $sum: 1 },
-            duplicates: { $sum: { $cond: ["$is_duplicate", 1, 0] } },
+    const [total, paste, manual, excel, duplicates, byMonth] =
+      await Promise.all([
+        JobData.countDocuments(filter),
+        JobData.countDocuments({ ...filter, source: "paste" }),
+        JobData.countDocuments({ ...filter, source: "manual" }),
+        JobData.countDocuments({ ...filter, source: "excel" }),
+        JobData.countDocuments({ ...filter, is_duplicate: true }),
+        JobData.aggregate([
+          { $match: filter },
+          {
+            $group: {
+              _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+              count: { $sum: 1 },
+              duplicates: { $sum: { $cond: ["$is_duplicate", 1, 0] } },
+            },
           },
-        },
-        { $sort: { _id: -1 } },
-        { $limit: 12 },
-      ]),
-    ]);
+          { $sort: { _id: -1 } },
+          { $limit: 12 },
+        ]),
+      ]);
     res.json({
       total,
       duplicates,
@@ -227,12 +253,10 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
       .filter((j) => j.title && j.company);
 
     if (jobs.length === 0) {
-      res
-        .status(400)
-        .json({
-          error:
-            'No valid rows found. Ensure "title" and "company" columns exist.',
-        });
+      res.status(400).json({
+        error:
+          'No valid rows found. Ensure "title" and "company" columns exist.',
+      });
       return;
     }
 
@@ -241,7 +265,7 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
     for (const j of jobs) {
       if (j.title && j.company && j.location) {
         const dup = await JobData.findOne(
-          buildDuplicateQuery(j.title, j.company, j.location, req.userId)
+          buildDuplicateQuery(j.title, j.company, j.location, req.userId),
         ).lean();
         if (dup) {
           (j as any).is_duplicate = true;

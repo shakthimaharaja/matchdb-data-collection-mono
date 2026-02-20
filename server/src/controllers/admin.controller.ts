@@ -40,7 +40,11 @@ export async function adminStats(_req: AuthRequest, res: Response) {
             Model.countDocuments({ ...filter, source: "excel" }),
             Model.countDocuments({ ...filter, is_duplicate: true }),
             Model.aggregate([
-              { $match: { uploaded_by: new mongoose.Types.ObjectId(String(userId)) } },
+              {
+                $match: {
+                  uploaded_by: new mongoose.Types.ObjectId(String(userId)),
+                },
+              },
               {
                 $group: {
                   _id: {

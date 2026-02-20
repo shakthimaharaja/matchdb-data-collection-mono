@@ -31,9 +31,7 @@ export default function Navbar() {
         </span>
       </div>
       <div className="navbar-right">
-        <span className={`role-badge ${roleBadge.cls}`}>
-          {roleBadge.label}
-        </span>
+        <span className={`role-badge ${roleBadge.cls}`}>{roleBadge.label}</span>
         <span className="user-name">{user?.name}</span>
         <button className="btn btn-ghost btn-sm" onClick={logout}>
           Sign Out
