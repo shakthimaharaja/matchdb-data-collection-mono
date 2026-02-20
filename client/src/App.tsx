@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -23,6 +24,12 @@ function LoginGuard() {
   return user ? <Navigate to="/" replace /> : <LoginPage />;
 }
 
+function RoleRouter() {
+  const { user } = useAuth();
+  if (user?.role === "admin") return <AdminDashboard />;
+  return <Dashboard />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -33,7 +40,7 @@ export default function App() {
             path="/*"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <RoleRouter />
               </ProtectedRoute>
             }
           />

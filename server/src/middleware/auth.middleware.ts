@@ -32,9 +32,9 @@ export function requireAuth(
   }
 }
 
-export function requireRole(role: string) {
+export function requireRole(...roles: string[]) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (req.userRole !== role) {
+    if (!roles.includes(req.userRole || "")) {
       res.status(403).json({ error: "Insufficient permissions" });
       return;
     }

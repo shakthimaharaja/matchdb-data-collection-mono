@@ -16,6 +16,7 @@ export interface ICandidateData extends Document {
   resume_experience?: string;
   resume_education?: string;
   resume_achievements?: string;
+  is_duplicate: boolean;
   source: "paste" | "manual" | "excel";
   uploaded_by: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -42,6 +43,7 @@ const CandidateDataSchema = new Schema<ICandidateData>(
     resume_experience: String,
     resume_education: String,
     resume_achievements: String,
+    is_duplicate: { type: Boolean, default: false },
     source: {
       type: String,
       required: true,

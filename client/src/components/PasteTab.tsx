@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import api from "../services/api";
 import CandidateForm from "./CandidateForm";
 import JobForm from "./JobForm";
 
@@ -70,38 +71,67 @@ function parseCandidateText(text: string) {
 }
 
 function parseJobText(text: string) {
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const full = text.replace(/\r/g, "");
+  // ── Pre-processing: strip LinkedIn hashtags & noise ──────
+  const cleaned = text
+    .replace(/hashtag#\w+/gi, "")       // hashtag#acunor
+    .replace(/#\w+/g, "")               // #hiring
+    .replace(/\bhashtag\b/gi, "")
+    .replace(/\r/g, "");
+
+  const lines = cleaned.split("\n").map((l) => l.trim()).filter(Boolean);
+  const full = cleaned;
 
   // ── Helpers ──────────────────────────────────────────────
   const stripEmojis = (s: string) =>
-    s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, "").trim();
+    s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{2702}-\u{27B0}]/gu, "").trim();
 
   const matchAny = (pattern: RegExp): string =>
     pattern.exec(full)?.[1]?.trim() || "";
 
-  // ── Title ─ first line, strip emojis & trailing work-mode ─
+  // ── Title ──────────────────────────────────────────────────
+  // Priority 1: "Role:" or "Role 1:" prefix
+  // Priority 2: "is hiring for [TITLE]" pattern
+  // Priority 3: first line (emoji-prefixed)
   let title = "";
-  if (lines.length > 0) {
+  const roleMatch = full.match(/^\s*role(?:\s*\d)?\s*[:=]\s*(.+)$/im);
+  const hiringMatch = full.match(/(?:is\s+)?hiring\s+for\s+(.+?)(?:\n|$)/i);
+  if (roleMatch) {
+    title = stripEmojis(roleMatch[1])
+      .replace(/\s*[-–—]\s*(onsite|remote|hybrid|wfh)\s*$/i, "")
+      .replace(/\s*\|.*$/, "")
+      .trim();
+  } else if (hiringMatch) {
+    title = stripEmojis(hiringMatch[1])
+      .replace(/\s*[-–—]\s*(onsite|remote|hybrid|wfh)\s*$/i, "")
+      .replace(/\s*\|.*$/, "")
+      .trim();
+  } else if (lines.length > 0) {
     title = stripEmojis(lines[0])
       .replace(/^[-–—:]\s*/, "")
       .replace(/\s*[-–—]\s*(onsite|remote|hybrid|wfh)\s*$/i, "")
       .replace(/\s*\|.*$/, "")
+      .replace(/^(?:hello|hi|hey)[,!.]?\s*(?:accepting\s+resumes?\s+(?:for\s+)?(?:below\s+)?role)?/i, "")
       .trim();
+    // if first line was just greeting, try second line
+    if (!title && lines.length > 1) {
+      title = stripEmojis(lines[1]).replace(/^[-–—:]\s*/, "").trim();
+    }
   }
 
   // ── Location ─ 📍 emoji, "Location:" prefix, or City, ST pattern ──
   let location =
-    matchAny(/📍\s*([^\n|]+)/) ||
+    matchAny(/📍\s*(?:location\s*[:=]?\s*)?([^\n|]+)/i) ||
     matchAny(/(?:location|loc)\s*[:=]\s*([^\n|]+)/i);
-  // strip parentheticals like "(Local Only – DL Required)"
-  location = location.replace(/\s*\(.*?\)\s*/g, "").trim();
+  // strip parentheticals like "(Local Only – DL Required)" but preserve "(3 days Onsite)"
+  location = location.replace(/\s*\([^)]*(?:local|only|required|dl|drivers?)\b[^)]*\)/gi, "").trim();
+  // strip trailing work-mode hints from location
+  location = location.replace(/\s*\(\d+\s*days?\s*(?:onsite|remote|hybrid|in[\s-]?office)\)/i, "").trim();
 
   // ── Work Mode ──────────────────────────────────────────────
   let work_mode = "";
-  if (/\b(onsite|on[\s-]?site|in[\s-]?office|in[\s-]?person)\b/i.test(full)) work_mode = "onsite";
+  if (/\bhybrid\s*(?:role)?\b/i.test(full) || /\(\d+\s*days?\s*onsite\)/i.test(full)) work_mode = "hybrid";
+  else if (/\b(onsite|on[\s-]?site|in[\s-]?office|in[\s-]?person|onsite\s+interview)\b/i.test(full)) work_mode = "onsite";
   else if (/\b(remote|wfh|work\s*from\s*home|telecommute)\b/i.test(full)) work_mode = "remote";
-  else if (/\bhybrid\b/i.test(full)) work_mode = "hybrid";
 
   // ── Job Type & Sub Type ────────────────────────────────────
   let job_type = "";
@@ -112,12 +142,13 @@ function parseJobText(text: string) {
   else if (/\b(cth|c2h|contract[\s-]?to[\s-]?hire)\b/i.test(full)) job_subtype = "c2h";
   else if (/\bw2\b/i.test(full)) job_subtype = "w2";
   else if (/\b1099\b/i.test(full)) job_subtype = "1099";
-  else if (/\b(direct[\s-]?hire)\b/i.test(full)) job_subtype = "direct_hire";
+  else if (/\b(direct[\s-]?(?:hire|client))\b/i.test(full)) job_subtype = "direct_hire";
+  else if (/\bsalary\b/i.test(full)) job_subtype = "salary";
 
   // type detection
   if (/\b(full[\s-]?time|fte|permanent|perm)\b/i.test(full)) job_type = "full_time";
   else if (/\b(part[\s-]?time)\b/i.test(full)) job_type = "part_time";
-  else if (/\b(contract|cth|c2c|c2h|w2|1099)\b/i.test(full)) job_type = "contract";
+  else if (/\b(contract|cth|c2c|c2h|w2|1099|consultant)\b/i.test(full)) job_type = "contract";
 
   // ── Duration (bonus context for description) ───────────────
   const durationMatch = full.match(/(\d+)\s*(?:\+\s*)?(?:months?|mos?)\b/i);
@@ -197,9 +228,8 @@ function parseJobText(text: string) {
   // Strategy 1: match known tech terms from the dictionary
   const lowerFull = full.toLowerCase();
   for (const [pattern, canonical] of Object.entries(KNOWN_TECH)) {
-    // word-boundary match (escape regex special chars in pattern)
     const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`(?:^|[\\s,;|/()•\\-–])${escaped}(?:[\\s,;|/()•\\-–]|$)`, "i").test(lowerFull)) {
+    if (new RegExp(`(?:^|[\\s,;|/()•\\-–+])${escaped}(?:[\\s,;|/()•\\-–+]|$)`, "i").test(lowerFull)) {
       if (!seen.has(canonical)) {
         seen.add(canonical);
         skills_required.push(canonical);
@@ -207,22 +237,27 @@ function parseJobText(text: string) {
     }
   }
 
-  // Strategy 2: extract from "Must Have:", "Skills:", "Required:", "Technologies:" blocks
-  const skillBlocks = full.match(
-    /(?:must\s*have|required|skills?\s*required|technologies|tech\s*stack|key\s*skills)\s*[:]\s*([^\n]*(?:\n(?![A-Z\u{1F300}-\u{1FAFF}])[^\n]*)*)/gimu
-  );
-  if (skillBlocks) {
-    for (const block of skillBlocks) {
-      const content = block.replace(/^[^:]+:\s*/, "");
-      const tokens = content.split(/[,;•\n|]+/).map((t) =>
-        t.replace(/\(.*?\)/g, "").replace(/[→←]/g, "").trim()
+  // Strategy 2: extract from structured skill blocks (multi-line, +/comma/bullet separated)
+  const skillBlockPatterns = [
+    /(?:must\s*have|required|mandatory\s*skills?|skills?\s*required|technologies|tech\s*stack|key\s*skills|knowledge\/skills|knowledge\s*skills)\s*[:]?\s*\n?([\s\S]*?)(?=\n\s*\n|\n(?:[A-Z][a-z]+\s*(?:[:.]|$))|$)/gim,
+  ];
+  for (const regex of skillBlockPatterns) {
+    let m;
+    while ((m = regex.exec(full)) !== null) {
+      const content = m[1];
+      // split on comma, semicolon, bullet, plus sign, newline, pipe
+      const tokens = content.split(/[,;•|\n]+/).flatMap((t) =>
+        t.split(/\s*\+\s*/).map((s) => s.trim())
       );
       for (const token of tokens) {
-        const clean = token.replace(/^\s*[-–—*]\s*/, "").trim();
-        if (clean.length < 2 || clean.length > 50) continue;
+        const clean = token
+          .replace(/^\s*[-–—*]\s*/, "")
+          .replace(/\(.*?\)/g, "")
+          .replace(/[→←]/g, "")
+          .trim();
+        if (clean.length < 2 || clean.length > 60) continue;
         const words = clean.toLowerCase().split(/\s+/);
         if (words.every((w) => NOISE.has(w))) continue;
-        // check if it's a known tech (multi-word)
         const lc = clean.toLowerCase();
         if (KNOWN_TECH[lc] && !seen.has(KNOWN_TECH[lc])) {
           seen.add(KNOWN_TECH[lc]);
@@ -232,14 +267,16 @@ function parseJobText(text: string) {
     }
   }
 
-  // Strategy 3: "Plus:" / "Nice to Have:" → also capture as skills
+  // Strategy 3: "Plus:" / "Nice to Have:" / "Preferred/Recommended:" → also capture as skills
   const plusBlocks = full.match(
-    /(?:plus|nice\s*to\s*have|good\s*to\s*have|preferred|bonus)\s*[:]\s*([^\n]*(?:\n(?![A-Z\u{1F300}-\u{1FAFF}])[^\n]*)*)/gimu
+    /(?:plus|nice\s*to\s*have|good\s*to\s*have|preferred(?:\/\s*recommended)?|bonus)\s*[:]?\s*\n?([\s\S]*?)(?=\n\s*\n|\n(?:[A-Z][a-z]+\s*[:.])|$)/gim
   );
   if (plusBlocks) {
     for (const block of plusBlocks) {
-      const content = block.replace(/^[^:]+:\s*/, "");
-      const tokens = content.split(/[,;•\n|]+/).map((t) => t.trim());
+      const content = block.replace(/^[^:\n]+[:]\s*/, "");
+      const tokens = content.split(/[,;•|\n]+/).flatMap((t) =>
+        t.split(/\s*\+\s*/).map((s) => s.trim())
+      );
       for (const token of tokens) {
         const clean = token.replace(/^\s*[-–—*]\s*/, "").trim();
         const lc = clean.toLowerCase();
@@ -253,17 +290,30 @@ function parseJobText(text: string) {
 
   // ── Experience ─────────────────────────────────────────────
   let experience_required: number | undefined;
+  // Match: "Exp:10+", "10+ Years", "Experience: 7+ Years", "💼 Experience: 7+ Years"
   const expMatch = full.match(
-    /(\d+)\s*\+?\s*(?:years?|yrs?|yr)\s*(?:of\s*)?(?:experience|exp)?/i
+    /(?:exp(?:erience)?\s*[:=]?\s*)(\d+)\s*\+?\s*(?:years?|yrs?|yr)?/i
+  ) || full.match(
+    /(\d+)\s*\+?\s*(?:years?|yrs?)\s*(?:of\s*)?(?:industry\s*)?(?:experience|exp)?/i
   );
   if (expMatch) experience_required = parseInt(expMatch[1], 10);
+
+  // ── Company ─ also check "is hiring for" patterns ──────────
+  let company =
+    matchAny(/(?:company|client|employer)\s*[:=]\s*([^\n|]+)/i);
+  if (!company) {
+    // "Bhanu Sri is hiring for ..." → company = "Bhanu Sri"
+    const hiringCoMatch = full.match(/^\s*([A-Z][\w\s]+?)\s+is\s+hiring/im);
+    if (hiringCoMatch) company = hiringCoMatch[1].trim();
+  }
 
   // ── Recruiter ──────────────────────────────────────────────
   const recruiter_name =
     matchAny(/(?:recruiter|contact|poc|submitted?\s*by)\s*[:=]\s*([^\n|,]+)/i);
+  // standalone email on its own line
   const recruiter_email =
     matchAny(/(?:recruiter\s*email|email)\s*[:=]\s*([\w.+-]+@[\w.-]+)/i) ||
-    matchAny(/([\w.+-]+@[\w.-]+)/);
+    matchAny(/^\s*([\w.+-]+@[\w.-]+)\s*$/m);
   const recruiter_phone =
     matchAny(/(?:recruiter\s*phone|phone|cell|mobile)\s*[:=]\s*([\d\s()+-]{7,})/i);
 
@@ -280,7 +330,7 @@ function parseJobText(text: string) {
   return {
     title,
     description,
-    company: matchAny(/(?:company|client|employer)\s*[:=]\s*([^\n|]+)/i),
+    company,
     location,
     job_type,
     job_subtype,
@@ -299,12 +349,32 @@ function parseJobText(text: string) {
 export default function PasteTab({ type, onSave }: Props) {
   const [text, setText] = useState("");
   const [parsed, setParsed] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
   const isCandidate = type === "candidate";
 
   const handleParse = () => {
     if (!text.trim()) return;
     const data = isCandidate ? parseCandidateText(text) : parseJobText(text);
     setParsed(data);
+  };
+
+  const handleAiParse = async () => {
+    if (!text.trim()) return;
+    setAiError("");
+    setAiLoading(true);
+    try {
+      const { data } = await api.post("/api/ai-parse", {
+        text,
+        type: isCandidate ? "candidate" : "job",
+      });
+      setParsed(data);
+    } catch (err: any) {
+      const msg = err.response?.data?.error || "AI parsing failed";
+      setAiError(msg);
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSave = async (data: any) => {
@@ -369,6 +439,18 @@ export default function PasteTab({ type, onSave }: Props) {
           Parse & Preview
         </button>
         <button
+          className="btn btn-ai"
+          onClick={handleAiParse}
+          disabled={!text.trim() || aiLoading}
+          title="Use OpenAI to parse (requires OPENAI_API_KEY in server/.env)"
+        >
+          {aiLoading ? (
+            <><span className="spinner-sm" /> Parsing…</>
+          ) : (
+            <>✨ AI Parse</>
+          )}
+        </button>
+        <button
           className="btn btn-ghost"
           onClick={() =>
             setText(isCandidate ? CANDIDATE_TEMPLATE : JOB_TEMPLATE)
@@ -382,6 +464,11 @@ export default function PasteTab({ type, onSave }: Props) {
           </button>
         )}
       </div>
+      {aiError && (
+        <div className="alert alert-error" style={{ marginTop: 12 }}>
+          {aiError}
+        </div>
+      )}
     </div>
   );
 }

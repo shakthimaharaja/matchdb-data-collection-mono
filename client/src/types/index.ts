@@ -15,6 +15,7 @@ export interface CandidateData {
   resume_experience?: string;
   resume_education?: string;
   resume_achievements?: string;
+  is_duplicate?: boolean;
   source?: "paste" | "manual" | "excel";
   createdAt?: string;
 }
@@ -36,6 +37,7 @@ export interface JobData {
   recruiter_name?: string;
   recruiter_email?: string;
   recruiter_phone?: string;
+  is_duplicate?: boolean;
   source?: "paste" | "manual" | "excel";
   createdAt?: string;
 }
@@ -44,10 +46,12 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: "candidate_uploader" | "job_uploader";
+  role: "candidate_uploader" | "job_uploader" | "admin";
 }
 
 export interface Stats {
   total: number;
+  duplicates: number;
   bySource: { paste: number; manual: number; excel: number };
+  byMonth: Array<{ month: string; count: number; duplicates: number }>;
 }

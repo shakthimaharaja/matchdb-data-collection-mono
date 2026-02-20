@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from "react";
+import api from "../services/api";
 
 interface Props {
   onUpload: (file: File) => Promise<void>;
@@ -137,6 +138,39 @@ export default function ExcelUpload({ onUpload, type }: Props) {
       )}
 
       <div className="excel-help">
+        <div className="template-download">
+          <h4>Start with our template</h4>
+          <p className="column-note">
+            Download the pre-formatted Excel template with correct column
+            headers, sample data, and instructions. Fill it in and upload.
+          </p>
+          <button
+            className="btn btn-secondary"
+            onClick={async () => {
+              try {
+                const res = await api.get(`/api/templates/${type}`, {
+                  responseType: "blob",
+                });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download =
+                  type === "candidate"
+                    ? "MatchDB_Candidate_Template.xlsx"
+                    : "MatchDB_Job_Template.xlsx";
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+              } catch {
+                alert("Failed to download template");
+              }
+            }}
+          >
+            📥 Download {type === "candidate" ? "Candidate" : "Job"} Template
+          </button>
+        </div>
+
         <h4>Expected Column Headers</h4>
         <div className="column-list">
           {(type === "candidate" ? candidateCols : jobCols)

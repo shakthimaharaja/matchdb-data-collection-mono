@@ -17,7 +17,9 @@ export default function Dashboard() {
   const [records, setRecords] = useState<any[]>([]);
   const [stats, setStats] = useState<Stats>({
     total: 0,
+    duplicates: 0,
     bySource: { paste: 0, manual: 0, excel: 0 },
+    byMonth: [],
   });
   const [toast, setToast] = useState<{
     message: string;
@@ -54,8 +56,14 @@ export default function Dashboard() {
 
   const handleSave = async (data: any, source: string) => {
     try {
-      await api.post(endpoint, { ...data, source });
-      showToast("Record saved successfully!");
+      const res = await api.post(endpoint, { ...data, source });
+      const isDup = res.data?.is_duplicate;
+      showToast(
+        isDup
+          ? `⚠️ Record saved but flagged as duplicate`
+          : "Record saved successfully!",
+        isDup ? "error" : "success",
+      );
       fetchData();
     } catch (err: any) {
       showToast(err.response?.data?.error || "Failed to save", "error");
@@ -80,7 +88,11 @@ export default function Dashboard() {
       const { data } = await api.post(`${endpoint}/upload`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      showToast(`${data.count} records imported from Excel!`);
+      const dupMsg =
+        data.duplicatesFound > 0
+          ? ` (${data.duplicatesFound} flagged as duplicates)`
+          : "";
+      showToast(`${data.count} records imported from Excel!${dupMsg}`);
       fetchData();
     } catch (err: any) {
       showToast(err.response?.data?.error || "Upload failed", "error");
@@ -117,7 +129,31 @@ export default function Dashboard() {
             <span className="stat-value">{stats.bySource.excel}</span>
             <span className="stat-label">Via Excel</span>
           </div>
+          <div className="stat-card stat-dup">
+            <span className="stat-value">{stats.duplicates}</span>
+            <span className="stat-label">Duplicates</span>
+          </div>
         </div>
+
+        {/* ── Monthly Breakdown ─────────────────── */}
+        {stats.byMonth.length > 0 && (
+          <div className="monthly-stats">
+            <h3>Monthly Activity</h3>
+            <div className="monthly-grid">
+              {stats.byMonth.map((m) => (
+                <div key={m.month} className="monthly-card">
+                  <span className="monthly-label">{m.month}</span>
+                  <span className="monthly-count">{m.count} records</span>
+                  {m.duplicates > 0 && (
+                    <span className="monthly-dup">
+                      {m.duplicates} dup{m.duplicates !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Tabs ──────────────────────────────── */}
         <div className="tab-section">

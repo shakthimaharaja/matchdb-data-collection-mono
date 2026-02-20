@@ -69,6 +69,7 @@ export default function DataTable({ records, type, onDelete }: Props) {
                 </>
               )}
               <th>Source</th>
+              <th>Dup</th>
               <th>Date</th>
               <th className="th-action"></th>
             </tr>
@@ -121,6 +122,13 @@ export default function DataTable({ records, type, onDelete }: Props) {
                   >
                     {SOURCE_CONFIG[r.source]?.label || r.source}
                   </span>
+                </td>
+                <td>
+                  {r.is_duplicate && (
+                    <span className="badge badge-dup" title="Duplicate entry">
+                      ⚠️ Dup
+                    </span>
+                  )}
                 </td>
                 <td className="cell-date">{fmtDate(r.createdAt)}</td>
                 <td className="cell-action">

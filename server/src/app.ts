@@ -5,6 +5,9 @@ import { env } from "./config/env.js";
 import authRoutes from "./routes/auth.routes.js";
 import candidateRoutes from "./routes/candidates.routes.js";
 import jobRoutes from "./routes/jobs.routes.js";
+import aiParseRoutes from "./routes/ai-parse.routes.js";
+import templateRoutes from "./routes/template.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 const app = express();
 
@@ -16,6 +19,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/candidates", candidateRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/ai-parse", aiParseRoutes);
+app.use("/api/templates", templateRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/health", (_req, res) => {
   res.json({

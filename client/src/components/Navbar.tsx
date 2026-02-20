@@ -4,6 +4,13 @@ import { useAuth } from "../context/AuthContext";
 export default function Navbar() {
   const { user, logout } = useAuth();
   const isCandidate = user?.role === "candidate_uploader";
+  const isAdmin = user?.role === "admin";
+
+  const roleBadge = isAdmin
+    ? { cls: "role-admin", label: "🛡️ Admin" }
+    : isCandidate
+      ? { cls: "role-candidate", label: "👤 Candidate Uploader" }
+      : { cls: "role-job", label: "💼 Job Uploader" };
 
   return (
     <nav className="navbar">
@@ -24,10 +31,8 @@ export default function Navbar() {
         </span>
       </div>
       <div className="navbar-right">
-        <span
-          className={`role-badge ${isCandidate ? "role-candidate" : "role-job"}`}
-        >
-          {isCandidate ? "👤 Candidate Uploader" : "💼 Job Uploader"}
+        <span className={`role-badge ${roleBadge.cls}`}>
+          {roleBadge.label}
         </span>
         <span className="user-name">{user?.name}</span>
         <button className="btn btn-ghost btn-sm" onClick={logout}>

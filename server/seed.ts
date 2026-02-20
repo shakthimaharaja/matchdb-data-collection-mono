@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["candidate_uploader", "job_uploader"],
+      enum: ["candidate_uploader", "job_uploader", "admin"],
     },
   },
   { timestamps: true },
@@ -106,9 +106,18 @@ async function seed() {
     role: "job_uploader",
   });
 
+  const adminHash = await bcrypt.hash("Admin1!", 10);
+  await User.create({
+    email: "admin@matchdb.com",
+    password: adminHash,
+    name: "System Admin",
+    role: "admin",
+  });
+
   console.log("✓ Users created");
   console.log("  • candidate_uploader@matchdb.com / Upload1!");
   console.log("  • job_uploader@matchdb.com       / Upload1!");
+  console.log("  • admin@matchdb.com              / Admin1!");
 
   // ── Candidate Records ──────────────────────────────────
   const candidates = [

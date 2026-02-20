@@ -16,6 +16,7 @@ export interface IJobData extends Document {
   recruiter_name?: string;
   recruiter_email?: string;
   recruiter_phone?: string;
+  is_duplicate: boolean;
   source: "paste" | "manual" | "excel";
   uploaded_by: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -46,6 +47,7 @@ const JobDataSchema = new Schema<IJobData>(
     recruiter_name: { type: String, trim: true },
     recruiter_email: { type: String, trim: true, lowercase: true },
     recruiter_phone: { type: String, trim: true },
+    is_duplicate: { type: Boolean, default: false },
     source: {
       type: String,
       required: true,
@@ -54,6 +56,12 @@ const JobDataSchema = new Schema<IJobData>(
     uploaded_by: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true },
+);
+
+// Compound index for fast duplicate detection (case-insensitive)
+JobDataSchema.index(
+  { title: 1, company: 1, location: 1, uploaded_by: 1 },
+  { name: "unique_job_per_user" },
 );
 
 export default mongoose.model<IJobData>("JobData", JobDataSchema);
