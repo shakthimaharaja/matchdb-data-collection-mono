@@ -24,7 +24,7 @@ No signup — accounts are pre-seeded.
 
 | Layer        | Technology                                                          |
 | ------------ | ------------------------------------------------------------------- |
-| **Frontend** | React 18 · Vite · TypeScript · React Router 6 · Axios              |
+| **Frontend** | React 18 · Vite · TypeScript · React Router 6 · Axios               |
 | **Backend**  | Express 4 · TypeScript · Mongoose 8 · JWT · Multer · SheetJS (xlsx) |
 | **Database** | MongoDB (`matchdb_data_collection`)                                 |
 | **AI Parse** | OpenAI API (optional)                                               |
