@@ -15,7 +15,7 @@ export interface CandidateData {
   resume_experience?: string;
   resume_education?: string;
   resume_achievements?: string;
-  source?: 'paste' | 'manual' | 'excel';
+  source?: "paste" | "manual" | "excel";
   createdAt?: string;
 }
 
@@ -36,7 +36,7 @@ export interface JobData {
   recruiter_name?: string;
   recruiter_email?: string;
   recruiter_phone?: string;
-  source?: 'paste' | 'manual' | 'excel';
+  source?: "paste" | "manual" | "excel";
   createdAt?: string;
 }
 
@@ -44,7 +44,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'candidate_uploader' | 'job_uploader';
+  role: "candidate_uploader" | "job_uploader";
 }
 
 export interface Stats {

@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface IJobData extends Document {
   title: string;
@@ -16,7 +16,7 @@ export interface IJobData extends Document {
   recruiter_name?: string;
   recruiter_email?: string;
   recruiter_phone?: string;
-  source: 'paste' | 'manual' | 'excel';
+  source: "paste" | "manual" | "excel";
   uploaded_by: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -28,9 +28,16 @@ const JobDataSchema = new Schema<IJobData>(
     description: { type: String, required: true },
     company: { type: String, required: true, trim: true },
     location: { type: String, required: true, trim: true },
-    job_type: { type: String, required: true, enum: ['full_time', 'part_time', 'contract'] },
-    job_subtype: { type: String, enum: ['c2c', 'c2h', 'w2', '1099', 'direct_hire', 'salary', ''] },
-    work_mode: { type: String, enum: ['remote', 'onsite', 'hybrid', ''] },
+    job_type: {
+      type: String,
+      required: true,
+      enum: ["full_time", "part_time", "contract"],
+    },
+    job_subtype: {
+      type: String,
+      enum: ["c2c", "c2h", "w2", "1099", "direct_hire", "salary", ""],
+    },
+    work_mode: { type: String, enum: ["remote", "onsite", "hybrid", ""] },
     salary_min: Number,
     salary_max: Number,
     pay_per_hour: Number,
@@ -39,10 +46,14 @@ const JobDataSchema = new Schema<IJobData>(
     recruiter_name: { type: String, trim: true },
     recruiter_email: { type: String, trim: true, lowercase: true },
     recruiter_phone: { type: String, trim: true },
-    source: { type: String, required: true, enum: ['paste', 'manual', 'excel'] },
-    uploaded_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    source: {
+      type: String,
+      required: true,
+      enum: ["paste", "manual", "excel"],
+    },
+    uploaded_by: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true },
 );
 
-export default mongoose.model<IJobData>('JobData', JobDataSchema);
+export default mongoose.model<IJobData>("JobData", JobDataSchema);

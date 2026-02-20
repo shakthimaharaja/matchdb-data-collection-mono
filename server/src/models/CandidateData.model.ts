@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 export interface ICandidateData extends Document {
   name: string;
@@ -16,7 +16,7 @@ export interface ICandidateData extends Document {
   resume_experience?: string;
   resume_education?: string;
   resume_achievements?: string;
-  source: 'paste' | 'manual' | 'excel';
+  source: "paste" | "manual" | "excel";
   uploaded_by: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -30,7 +30,10 @@ const CandidateDataSchema = new Schema<ICandidateData>(
     location: { type: String, trim: true },
     current_company: { type: String, trim: true },
     current_role: { type: String, trim: true },
-    preferred_job_type: { type: String, enum: ['full_time', 'part_time', 'contract', ''] },
+    preferred_job_type: {
+      type: String,
+      enum: ["full_time", "part_time", "contract", ""],
+    },
     expected_hourly_rate: Number,
     experience_years: Number,
     skills: { type: [String], default: [] },
@@ -39,10 +42,17 @@ const CandidateDataSchema = new Schema<ICandidateData>(
     resume_experience: String,
     resume_education: String,
     resume_achievements: String,
-    source: { type: String, required: true, enum: ['paste', 'manual', 'excel'] },
-    uploaded_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    source: {
+      type: String,
+      required: true,
+      enum: ["paste", "manual", "excel"],
+    },
+    uploaded_by: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true },
 );
 
-export default mongoose.model<ICandidateData>('CandidateData', CandidateDataSchema);
+export default mongoose.model<ICandidateData>(
+  "CandidateData",
+  CandidateDataSchema,
+);

@@ -1,6 +1,6 @@
-import app from './app.js';
-import { connectDB } from './config/mongoose.js';
-import { env } from './config/env.js';
+import app from "./app.js";
+import { connectDB } from "./config/mongoose.js";
+import { env } from "./config/env.js";
 
 async function main() {
   await connectDB();
@@ -10,6 +10,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error('Failed to start server:', err);
+  console.error("Failed to start server:", err);
   process.exit(1);
 });

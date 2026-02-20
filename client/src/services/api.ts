@@ -1,13 +1,13 @@
-import axios from 'axios';
+import axios from "axios";
 
 const api = axios.create({
-  baseURL: '',
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: "",
+  headers: { "Content-Type": "application/json" },
 });
 
 // Auto-attach token
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('dc_token');
+  const token = localStorage.getItem("dc_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -18,9 +18,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && window.location.pathname !== '/login') {
-      localStorage.removeItem('dc_token');
-      window.location.href = '/login';
+    if (err.response?.status === 401 && window.location.pathname !== "/login") {
+      localStorage.removeItem("dc_token");
+      window.location.href = "/login";
     }
     return Promise.reject(err);
   },

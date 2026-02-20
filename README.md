@@ -9,10 +9,10 @@
 This application provides a standalone data-collection portal with **two role-based logins**.
 Each role has **three ways** to enter data: copy / paste structured text, fill a manual form, or upload an Excel spreadsheet.
 
-| Role | Dashboard | Data Stored |
-|------|-----------|-------------|
-| **Candidate Uploader** | Candidate entry (paste / manual / Excel) | `CandidateData` collection |
-| **Job Uploader** | Job posting entry (paste / manual / Excel) | `JobData` collection |
+| Role                   | Dashboard                                  | Data Stored                |
+| ---------------------- | ------------------------------------------ | -------------------------- |
+| **Candidate Uploader** | Candidate entry (paste / manual / Excel)   | `CandidateData` collection |
+| **Job Uploader**       | Job posting entry (paste / manual / Excel) | `JobData` collection       |
 
 No signup — accounts are pre-seeded.
 
@@ -20,12 +20,12 @@ No signup — accounts are pre-seeded.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18 · Vite · TypeScript · React Router 6 · Axios |
-| **Backend** | Express 4 · TypeScript · Mongoose 8 · JWT · Multer · SheetJS (xlsx) |
-| **Database** | MongoDB (`matchdb_data_collection`) |
-| **Monorepo** | npm workspaces · concurrently |
+| Layer        | Technology                                                          |
+| ------------ | ------------------------------------------------------------------- |
+| **Frontend** | React 18 · Vite · TypeScript · React Router 6 · Axios               |
+| **Backend**  | Express 4 · TypeScript · Mongoose 8 · JWT · Multer · SheetJS (xlsx) |
+| **Database** | MongoDB (`matchdb_data_collection`)                                 |
+| **Monorepo** | npm workspaces · concurrently                                       |
 
 ---
 
@@ -86,40 +86,43 @@ npm run dev
 
 ### Login Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
+| Role               | Email                            | Password   |
+| ------------------ | -------------------------------- | ---------- |
 | Candidate Uploader | `candidate_uploader@matchdb.com` | `Upload1!` |
-| Job Uploader | `job_uploader@matchdb.com` | `Upload1!` |
+| Job Uploader       | `job_uploader@matchdb.com`       | `Upload1!` |
 
 ---
 
 ## API Endpoints
 
 ### Auth
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/auth/login` | Login → JWT token |
-| `GET` | `/api/auth/verify` | Verify token → user info |
+
+| Method | Path               | Description              |
+| ------ | ------------------ | ------------------------ |
+| `POST` | `/api/auth/login`  | Login → JWT token        |
+| `GET`  | `/api/auth/verify` | Verify token → user info |
 
 ### Candidates (requires `candidate_uploader` role)
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/candidates` | List all candidates (by user) |
-| `GET` | `/api/candidates/stats` | Get stats (total + by source) |
-| `POST` | `/api/candidates` | Create single candidate |
-| `POST` | `/api/candidates/bulk` | Bulk create from JSON array |
-| `POST` | `/api/candidates/upload` | Upload Excel/CSV file |
-| `DELETE` | `/api/candidates/:id` | Delete a candidate |
+
+| Method   | Path                     | Description                   |
+| -------- | ------------------------ | ----------------------------- |
+| `GET`    | `/api/candidates`        | List all candidates (by user) |
+| `GET`    | `/api/candidates/stats`  | Get stats (total + by source) |
+| `POST`   | `/api/candidates`        | Create single candidate       |
+| `POST`   | `/api/candidates/bulk`   | Bulk create from JSON array   |
+| `POST`   | `/api/candidates/upload` | Upload Excel/CSV file         |
+| `DELETE` | `/api/candidates/:id`    | Delete a candidate            |
 
 ### Jobs (requires `job_uploader` role)
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/api/jobs` | List all jobs (by user) |
-| `GET` | `/api/jobs/stats` | Get stats (total + by source) |
-| `POST` | `/api/jobs` | Create single job |
-| `POST` | `/api/jobs/bulk` | Bulk create from JSON array |
-| `POST` | `/api/jobs/upload` | Upload Excel/CSV file |
-| `DELETE` | `/api/jobs/:id` | Delete a job |
+
+| Method   | Path               | Description                   |
+| -------- | ------------------ | ----------------------------- |
+| `GET`    | `/api/jobs`        | List all jobs (by user)       |
+| `GET`    | `/api/jobs/stats`  | Get stats (total + by source) |
+| `POST`   | `/api/jobs`        | Create single job             |
+| `POST`   | `/api/jobs/bulk`   | Bulk create from JSON array   |
+| `POST`   | `/api/jobs/upload` | Upload Excel/CSV file         |
+| `DELETE` | `/api/jobs/:id`    | Delete a job                  |
 
 ---
 
@@ -148,13 +151,13 @@ The `npm run seed` command populates:
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start API + UI (concurrently) |
-| `npm run dev:server` | Start API only |
-| `npm run dev:client` | Start UI only |
-| `npm run seed` | Seed MongoDB with mock data |
-| `npm run build` | Production build (client) |
+| Script               | Description                   |
+| -------------------- | ----------------------------- |
+| `npm run dev`        | Start API + UI (concurrently) |
+| `npm run dev:server` | Start API only                |
+| `npm run dev:client` | Start UI only                 |
+| `npm run seed`       | Seed MongoDB with mock data   |
+| `npm run build`      | Production build (client)     |
 
 ---
 
