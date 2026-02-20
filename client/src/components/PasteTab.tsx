@@ -23,20 +23,19 @@ Resume Experience: Senior Developer at Tech Corp (2020-present) — Led a team o
 Resume Education: BS Computer Science, MIT, 2018
 Resume Achievements: Led migration to microservices, reducing deploy time by 60%`;
 
-const JOB_TEMPLATE = `Title: Senior React Developer
-Company: Innovation Labs
-Location: San Francisco, CA
-Description: We are looking for an experienced React developer to lead our frontend architecture. Must have strong TypeScript skills.
-Job Type: full_time
-Sub Type: w2
-Work Mode: hybrid
-Salary Min: 130000
-Salary Max: 165000
-Skills Required: React, TypeScript, Redux, GraphQL, CSS, Jest
-Experience Required: 5
-Recruiter Name: Emily Watson
-Recruiter Email: emily@innovationlabs.com
-Recruiter Phone: 555-111-2222`;
+const JOB_TEMPLATE = `💥 Sr. Java Developer – Onsite
+📍 Des Moines, IA (Local Only – DL Required)
+⏳ 6 Months CTH | 🔗 LinkedIn Mandatory
+
+Must Have:
+Expert Java Backend, Spring Boot, RabbitMQ (or similar)
+Financial Services experience, Maven → Gradle migration
+
+Plus: Angular, Production Support
+
+Interview: MS Teams (PV) + 1–2 Client Video Rounds
+Resumes: 8–12 bullets max per job
+Onsite role – relocation required if needed.`;
 
 function parseCandidateText(text: string) {
   const get = (key: string): string => {
@@ -71,40 +70,229 @@ function parseCandidateText(text: string) {
 }
 
 function parseJobText(text: string) {
-  const get = (key: string): string => {
-    const regex = new RegExp(`^${key}\\s*[:=]\\s*(.+)$`, "im");
-    return regex.exec(text)?.[1]?.trim() || "";
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const full = text.replace(/\r/g, "");
+
+  // ── Helpers ──────────────────────────────────────────────
+  const stripEmojis = (s: string) =>
+    s.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}]/gu, "").trim();
+
+  const matchAny = (pattern: RegExp): string =>
+    pattern.exec(full)?.[1]?.trim() || "";
+
+  // ── Title ─ first line, strip emojis & trailing work-mode ─
+  let title = "";
+  if (lines.length > 0) {
+    title = stripEmojis(lines[0])
+      .replace(/^[-–—:]\s*/, "")
+      .replace(/\s*[-–—]\s*(onsite|remote|hybrid|wfh)\s*$/i, "")
+      .replace(/\s*\|.*$/, "")
+      .trim();
+  }
+
+  // ── Location ─ 📍 emoji, "Location:" prefix, or City, ST pattern ──
+  let location =
+    matchAny(/📍\s*([^\n|]+)/) ||
+    matchAny(/(?:location|loc)\s*[:=]\s*([^\n|]+)/i);
+  // strip parentheticals like "(Local Only – DL Required)"
+  location = location.replace(/\s*\(.*?\)\s*/g, "").trim();
+
+  // ── Work Mode ──────────────────────────────────────────────
+  let work_mode = "";
+  if (/\b(onsite|on[\s-]?site|in[\s-]?office|in[\s-]?person)\b/i.test(full)) work_mode = "onsite";
+  else if (/\b(remote|wfh|work\s*from\s*home|telecommute)\b/i.test(full)) work_mode = "remote";
+  else if (/\bhybrid\b/i.test(full)) work_mode = "hybrid";
+
+  // ── Job Type & Sub Type ────────────────────────────────────
+  let job_type = "";
+  let job_subtype = "";
+
+  // sub-type detection (order matters — check before generic type)
+  if (/\b(c2c|corp[\s-]?to[\s-]?corp)\b/i.test(full)) job_subtype = "c2c";
+  else if (/\b(cth|c2h|contract[\s-]?to[\s-]?hire)\b/i.test(full)) job_subtype = "c2h";
+  else if (/\bw2\b/i.test(full)) job_subtype = "w2";
+  else if (/\b1099\b/i.test(full)) job_subtype = "1099";
+  else if (/\b(direct[\s-]?hire)\b/i.test(full)) job_subtype = "direct_hire";
+
+  // type detection
+  if (/\b(full[\s-]?time|fte|permanent|perm)\b/i.test(full)) job_type = "full_time";
+  else if (/\b(part[\s-]?time)\b/i.test(full)) job_type = "part_time";
+  else if (/\b(contract|cth|c2c|c2h|w2|1099)\b/i.test(full)) job_type = "contract";
+
+  // ── Duration (bonus context for description) ───────────────
+  const durationMatch = full.match(/(\d+)\s*(?:\+\s*)?(?:months?|mos?)\b/i);
+  const duration = durationMatch ? durationMatch[0].trim() : "";
+
+  // ── Pay / Salary ───────────────────────────────────────────
+  let salary_min: number | undefined;
+  let salary_max: number | undefined;
+  let pay_per_hour: number | undefined;
+
+  // "$XX/hr" or "$XX per hour" or "$XX/hour"
+  const hourlyMatch = full.match(/\$\s*([\d,.]+)\s*(?:\/|\s*per\s*)\s*h(?:ou)?r/i);
+  if (hourlyMatch) pay_per_hour = parseFloat(hourlyMatch[1].replace(/,/g, ""));
+
+  // "$XXk - $YYk" or "$XXX,XXX - $YYY,YYY"
+  const rangeMatch = full.match(/\$\s*([\d,.]+)\s*k?\s*[-–—to]+\s*\$?\s*([\d,.]+)\s*k?/i);
+  if (rangeMatch) {
+    let lo = parseFloat(rangeMatch[1].replace(/,/g, ""));
+    let hi = parseFloat(rangeMatch[2].replace(/,/g, ""));
+    if (lo < 1000) lo *= 1000; // "120k" → 120000
+    if (hi < 1000) hi *= 1000;
+    salary_min = lo;
+    salary_max = hi;
+  }
+
+  // ── Skills ─────────────────────────────────────────────────
+  const NOISE = new Set([
+    "must", "have", "required", "plus", "nice", "to", "good", "prefer",
+    "preferred", "experience", "strong", "expert", "proficient", "knowledge",
+    "and", "or", "with", "in", "of", "a", "an", "the", "for", "similar",
+    "looking", "years", "year", "yrs", "yr", "mandatory", "local", "only",
+    "onsite", "remote", "hybrid", "interview", "resumes", "resume",
+    "relocation", "needed", "if", "not", "is", "are", "we", "will",
+    "required", "minimum", "max", "min", "also", "ideally", "should",
+  ]);
+
+  const KNOWN_TECH: Record<string, string> = {
+    "java": "Java", "spring boot": "Spring Boot", "spring": "Spring",
+    "springboot": "Spring Boot", "react": "React", "reactjs": "React",
+    "angular": "Angular", "vue": "Vue.js", "vuejs": "Vue.js",
+    "node": "Node.js", "nodejs": "Node.js", "node.js": "Node.js",
+    "typescript": "TypeScript", "javascript": "JavaScript", "js": "JavaScript",
+    "ts": "TypeScript", "python": "Python", "django": "Django", "flask": "Flask",
+    "go": "Go", "golang": "Go", "rust": "Rust", "c#": "C#", "c++": "C++",
+    ".net": ".NET", "dotnet": ".NET", "asp.net": "ASP.NET",
+    "sql": "SQL", "mysql": "MySQL", "postgresql": "PostgreSQL",
+    "postgres": "PostgreSQL", "mongodb": "MongoDB", "mongo": "MongoDB",
+    "redis": "Redis", "elasticsearch": "Elasticsearch",
+    "rabbitmq": "RabbitMQ", "kafka": "Kafka", "activemq": "ActiveMQ",
+    "aws": "AWS", "azure": "Azure", "gcp": "GCP",
+    "docker": "Docker", "kubernetes": "Kubernetes", "k8s": "Kubernetes",
+    "terraform": "Terraform", "ansible": "Ansible", "jenkins": "Jenkins",
+    "ci/cd": "CI/CD", "cicd": "CI/CD", "git": "Git",
+    "maven": "Maven", "gradle": "Gradle", "npm": "npm",
+    "graphql": "GraphQL", "rest": "REST", "restful": "REST",
+    "microservices": "Microservices", "sass": "SASS", "css": "CSS",
+    "html": "HTML", "tailwind": "Tailwind CSS",
+    "redux": "Redux", "nextjs": "Next.js", "next.js": "Next.js",
+    "express": "Express", "nestjs": "NestJS", "fastapi": "FastAPI",
+    "hibernate": "Hibernate", "jpa": "JPA", "oracle": "Oracle",
+    "dynamodb": "DynamoDB", "cassandra": "Cassandra",
+    "snowflake": "Snowflake", "databricks": "Databricks",
+    "spark": "Spark", "hadoop": "Hadoop", "airflow": "Airflow",
+    "tableau": "Tableau", "power bi": "Power BI", "powerbi": "Power BI",
+    "salesforce": "Salesforce", "sap": "SAP",
+    "scala": "Scala", "kotlin": "Kotlin", "swift": "Swift",
+    "flutter": "Flutter", "react native": "React Native",
+    "cypress": "Cypress", "jest": "Jest", "junit": "JUnit", "selenium": "Selenium",
+    "agile": "Agile", "scrum": "Scrum", "jira": "Jira",
+    "production support": "Production Support",
+    "financial services": "Financial Services",
   };
+
+  const skills_required: string[] = [];
+  const seen = new Set<string>();
+
+  // Strategy 1: match known tech terms from the dictionary
+  const lowerFull = full.toLowerCase();
+  for (const [pattern, canonical] of Object.entries(KNOWN_TECH)) {
+    // word-boundary match (escape regex special chars in pattern)
+    const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (new RegExp(`(?:^|[\\s,;|/()•\\-–])${escaped}(?:[\\s,;|/()•\\-–]|$)`, "i").test(lowerFull)) {
+      if (!seen.has(canonical)) {
+        seen.add(canonical);
+        skills_required.push(canonical);
+      }
+    }
+  }
+
+  // Strategy 2: extract from "Must Have:", "Skills:", "Required:", "Technologies:" blocks
+  const skillBlocks = full.match(
+    /(?:must\s*have|required|skills?\s*required|technologies|tech\s*stack|key\s*skills)\s*[:]\s*([^\n]*(?:\n(?![A-Z\u{1F300}-\u{1FAFF}])[^\n]*)*)/gimu
+  );
+  if (skillBlocks) {
+    for (const block of skillBlocks) {
+      const content = block.replace(/^[^:]+:\s*/, "");
+      const tokens = content.split(/[,;•\n|]+/).map((t) =>
+        t.replace(/\(.*?\)/g, "").replace(/[→←]/g, "").trim()
+      );
+      for (const token of tokens) {
+        const clean = token.replace(/^\s*[-–—*]\s*/, "").trim();
+        if (clean.length < 2 || clean.length > 50) continue;
+        const words = clean.toLowerCase().split(/\s+/);
+        if (words.every((w) => NOISE.has(w))) continue;
+        // check if it's a known tech (multi-word)
+        const lc = clean.toLowerCase();
+        if (KNOWN_TECH[lc] && !seen.has(KNOWN_TECH[lc])) {
+          seen.add(KNOWN_TECH[lc]);
+          skills_required.push(KNOWN_TECH[lc]);
+        }
+      }
+    }
+  }
+
+  // Strategy 3: "Plus:" / "Nice to Have:" → also capture as skills
+  const plusBlocks = full.match(
+    /(?:plus|nice\s*to\s*have|good\s*to\s*have|preferred|bonus)\s*[:]\s*([^\n]*(?:\n(?![A-Z\u{1F300}-\u{1FAFF}])[^\n]*)*)/gimu
+  );
+  if (plusBlocks) {
+    for (const block of plusBlocks) {
+      const content = block.replace(/^[^:]+:\s*/, "");
+      const tokens = content.split(/[,;•\n|]+/).map((t) => t.trim());
+      for (const token of tokens) {
+        const clean = token.replace(/^\s*[-–—*]\s*/, "").trim();
+        const lc = clean.toLowerCase();
+        if (KNOWN_TECH[lc] && !seen.has(KNOWN_TECH[lc])) {
+          seen.add(KNOWN_TECH[lc]);
+          skills_required.push(KNOWN_TECH[lc]);
+        }
+      }
+    }
+  }
+
+  // ── Experience ─────────────────────────────────────────────
+  let experience_required: number | undefined;
+  const expMatch = full.match(
+    /(\d+)\s*\+?\s*(?:years?|yrs?|yr)\s*(?:of\s*)?(?:experience|exp)?/i
+  );
+  if (expMatch) experience_required = parseInt(expMatch[1], 10);
+
+  // ── Recruiter ──────────────────────────────────────────────
+  const recruiter_name =
+    matchAny(/(?:recruiter|contact|poc|submitted?\s*by)\s*[:=]\s*([^\n|,]+)/i);
+  const recruiter_email =
+    matchAny(/(?:recruiter\s*email|email)\s*[:=]\s*([\w.+-]+@[\w.-]+)/i) ||
+    matchAny(/([\w.+-]+@[\w.-]+)/);
+  const recruiter_phone =
+    matchAny(/(?:recruiter\s*phone|phone|cell|mobile)\s*[:=]\s*([\d\s()+-]{7,})/i);
+
+  // ── Description ─ compile the full post as-is ──────────────
+  const descParts: string[] = [];
+  if (duration) descParts.push(`Duration: ${duration}`);
+  // collect all lines that aren't the title or location
+  const descLines = lines.slice(1).filter(
+    (l) => !l.startsWith("📍") && !/^(?:recruiter|contact|poc|email|phone)\s*[:=]/i.test(stripEmojis(l))
+  );
+  if (descLines.length > 0) descParts.push(descLines.join("\n"));
+  const description = descParts.join("\n\n") || full;
+
   return {
-    title: get("Title") || get("Job Title") || get("Position"),
-    description: get("Description") || get("Job Description"),
-    company: get("Company"),
-    location: get("Location"),
-    job_type: (get("Job Type") || get("Type"))
-      .toLowerCase()
-      .replace(/\s+/g, "_"),
-    job_subtype: (get("Sub Type") || get("Subtype") || get("Job Subtype"))
-      .toLowerCase()
-      .replace(/[\s-]+/g, "_"),
-    work_mode: (get("Work Mode") || get("Mode")).toLowerCase(),
-    salary_min: parseFloat(get("Salary Min") || get("Min Salary")) || undefined,
-    salary_max: parseFloat(get("Salary Max") || get("Max Salary")) || undefined,
-    pay_per_hour:
-      parseFloat(get("Pay Per Hour") || get("Hourly Pay")) || undefined,
-    skills_required: (
-      get("Skills Required") ||
-      get("Skills") ||
-      get("Required Skills")
-    )
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean),
-    experience_required:
-      parseFloat(get("Experience Required") || get("Required Experience")) ||
-      undefined,
-    recruiter_name: get("Recruiter Name") || get("Recruiter"),
-    recruiter_email: get("Recruiter Email"),
-    recruiter_phone: get("Recruiter Phone"),
+    title,
+    description,
+    company: matchAny(/(?:company|client|employer)\s*[:=]\s*([^\n|]+)/i),
+    location,
+    job_type,
+    job_subtype,
+    work_mode,
+    salary_min,
+    salary_max,
+    pay_per_hour,
+    skills_required,
+    experience_required,
+    recruiter_name,
+    recruiter_email: recruiter_email && !recruiter_email.includes("@matchdb") ? recruiter_email : "",
+    recruiter_phone,
   };
 }
 
@@ -157,9 +345,13 @@ export default function PasteTab({ type, onSave }: Props) {
   return (
     <div className="paste-tab">
       <p className="tab-description">
-        Paste {isCandidate ? "candidate" : "job"} details using the{" "}
-        <strong>Key: Value</strong> format below. Fields will be automatically
-        extracted and shown for review before saving.
+        Paste {isCandidate ? "candidate" : "job"} details below.{" "}
+        {isCandidate ? (
+          <>Uses <strong>Key: Value</strong> format.</>
+        ) : (
+          <>Supports <strong>real recruiter job posts</strong> with emojis, shorthand (CTH, C2C, W2), and bullet-style descriptions. Skills, location, work mode, and pay are auto-extracted.</>
+        )}{" "}
+        Fields will be shown for review before saving.
       </p>
       <textarea
         className="paste-textarea"
