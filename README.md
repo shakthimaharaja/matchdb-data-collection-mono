@@ -48,8 +48,7 @@ matchdb-data-collection-mono/
 │   │   │   ├── ai-parse.controller.ts    # OpenAI-powered text → structured job
 │   │   │   └── template.controller.ts    # Excel template download
 │   │   ├── middleware/
-│   │   │   ├── auth.middleware.ts         # JWT guard + requireRole (multi-role)
-│   │   │   └── error.middleware.ts        # Global error handler
+│   │   │   └── auth.middleware.ts         # JWT guard + requireRole (multi-role)
 │   │   ├── models/
 │   │   │   ├── User.model.ts             # Roles: candidate_uploader, job_uploader, admin
 │   │   │   ├── CandidateData.model.ts    # + is_duplicate flag
@@ -242,6 +241,7 @@ CORS_ORIGINS=http://localhost:5173
 
 # Optional — for AI parse feature
 OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
 ```
 
 ---
