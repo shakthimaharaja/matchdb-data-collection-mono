@@ -19,4 +19,7 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV || "development",
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
   OPENAI_MODEL: process.env.OPENAI_MODEL || "gpt-4o-mini",
+  // Bridge to matchdb-jobs-services — shared secret must match INTERNAL_API_KEY there
+  JOBS_SERVICES_URL: process.env.JOBS_SERVICES_URL || "http://localhost:8001",
+  INTERNAL_API_KEY: process.env.INTERNAL_API_KEY || "matchdb-internal-dev-key",
 };

@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import CandidateData from "../models/CandidateData.model.js";
 import * as XLSX from "xlsx";
+import { notifyIngestProfiles } from "../services/notify.service.js";
 
 // ── Duplicate detection helper ────────────────────────────
 function buildCandidateDupQuery(name: string, email: string, userId: any) {
@@ -42,6 +43,7 @@ export async function createCandidate(req: AuthRequest, res: Response) {
     }
 
     const candidate = await CandidateData.create(data);
+    if (!data.is_duplicate) notifyIngestProfiles([candidate.toObject()]);
     res.status(201).json(candidate);
   } catch (err: any) {
     res
@@ -78,6 +80,8 @@ export async function createBulkCandidates(req: AuthRequest, res: Response) {
     }
 
     const saved = await CandidateData.insertMany(records);
+    const unique = saved.filter((r: any) => !r.is_duplicate);
+    if (unique.length > 0) notifyIngestProfiles(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,
@@ -240,6 +244,8 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
     }
 
     const saved = await CandidateData.insertMany(candidates);
+    const unique = saved.filter((r: any) => !r.is_duplicate);
+    if (unique.length > 0) notifyIngestProfiles(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,

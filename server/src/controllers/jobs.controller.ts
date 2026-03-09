@@ -2,6 +2,7 @@ import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import JobData from "../models/JobData.model.js";
 import * as XLSX from "xlsx";
+import { notifyIngestJobs } from "../services/notify.service.js";
 
 // ── Duplicate detection helper ────────────────────────────
 function buildDuplicateQuery(
@@ -58,6 +59,7 @@ export async function createJob(req: AuthRequest, res: Response) {
     }
 
     const job = await JobData.create(data);
+    if (!data.is_duplicate) notifyIngestJobs([job.toObject()]);
     res.status(201).json(job);
   } catch (err: any) {
     res
@@ -94,6 +96,8 @@ export async function createBulkJobs(req: AuthRequest, res: Response) {
     }
 
     const saved = await JobData.insertMany(records);
+    const unique = saved.filter((r: any) => !r.is_duplicate);
+    if (unique.length > 0) notifyIngestJobs(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,
@@ -275,6 +279,8 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
     }
 
     const saved = await JobData.insertMany(jobs);
+    const unique = saved.filter((r: any) => !r.is_duplicate);
+    if (unique.length > 0) notifyIngestJobs(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,
