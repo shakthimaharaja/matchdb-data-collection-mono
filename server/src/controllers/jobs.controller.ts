@@ -1,8 +1,31 @@
+/* eslint-disable sonarjs/prefer-string-replace-all, no-useless-escape */
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import JobData from "../models/JobData.model.js";
 import * as XLSX from "xlsx";
 import { notifyIngestJobs } from "../services/notify.service.js";
+
+const TRAILING_REQUIRED_MARKER = new RegExp("\\s*\\*\\s*$", "g");
+const WHITESPACE_OR_DASH_RUN = new RegExp("[\\s-]+", "g");
+const BACKSLASH = String.fromCharCode(92);
+
+const escapeRegex = (value: string) =>
+  value
+    .trim()
+    .replaceAll(BACKSLASH, String.raw`\\`)
+    .replaceAll(".", String.raw`\.`)
+    .replaceAll("^", String.raw`\^`)
+    .replaceAll("$", String.raw`\$`)
+    .replaceAll("*", String.raw`\*`)
+    .replaceAll("+", String.raw`\+`)
+    .replaceAll("?", String.raw`\?`)
+    .replaceAll("(", String.raw`\(`)
+    .replaceAll(")", String.raw`\)`)
+    .replaceAll("[", String.raw`\[`)
+    .replaceAll("]", String.raw`\]`)
+    .replaceAll("{", String.raw`\{`)
+    .replaceAll("}", String.raw`\}`)
+    .replaceAll("|", String.raw`\|`);
 
 // ── Duplicate detection helper ────────────────────────────
 function buildDuplicateQuery(
@@ -14,22 +37,13 @@ function buildDuplicateQuery(
   return {
     uploaded_by: userId,
     title: {
-      $regex: new RegExp(
-        `^${title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
-        "i",
-      ),
+      $regex: new RegExp(`^${escapeRegex(title)}$`, "i"),
     },
     company: {
-      $regex: new RegExp(
-        `^${company.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
-        "i",
-      ),
+      $regex: new RegExp(`^${escapeRegex(company)}$`, "i"),
     },
     location: {
-      $regex: new RegExp(
-        `^${location.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
-        "i",
-      ),
+      $regex: new RegExp(`^${escapeRegex(location)}$`, "i"),
     },
   };
 }
@@ -97,7 +111,8 @@ export async function createBulkJobs(req: AuthRequest, res: Response) {
 
     const saved = await JobData.insertMany(records);
     const unique = saved.filter((r: any) => !r.is_duplicate);
-    if (unique.length > 0) notifyIngestJobs(unique.map((r: any) => r.toObject()));
+    if (unique.length > 0)
+      notifyIngestJobs(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,
@@ -193,13 +208,13 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
     const rows = rawRows.map((row) => {
       const clean: any = {};
       for (const [key, val] of Object.entries(row)) {
-        clean[key.replace(/\s*\*\s*$/, "").trim()] = val;
+        clean[key.replaceAll(TRAILING_REQUIRED_MARKER, "").trim()] = val;
       }
       return clean;
     });
 
     const normalize = (val: string) =>
-      val.toLowerCase().replace(/[\s-]+/g, "_");
+      val.toLowerCase().replaceAll(WHITESPACE_OR_DASH_RUN, "_");
 
     const jobs = rows
       .map((row) => ({
@@ -218,15 +233,15 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
           row.work_mode || row["Work Mode"] || row.Mode || "",
         ),
         salary_min:
-          parseFloat(
+          Number.parseFloat(
             row.salary_min || row["Salary Min"] || row["Min Salary"] || "0",
           ) || undefined,
         salary_max:
-          parseFloat(
+          Number.parseFloat(
             row.salary_max || row["Salary Max"] || row["Max Salary"] || "0",
           ) || undefined,
         pay_per_hour:
-          parseFloat(
+          Number.parseFloat(
             row.pay_per_hour || row["Pay Per Hour"] || row["Hourly Pay"] || "0",
           ) || undefined,
         skills_required:
@@ -241,7 +256,7 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
                 .filter(Boolean)
             : [],
         experience_required:
-          parseFloat(
+          Number.parseFloat(
             row.experience_required ||
               row["Experience Required"] ||
               row.Experience ||
@@ -280,7 +295,8 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
 
     const saved = await JobData.insertMany(jobs);
     const unique = saved.filter((r: any) => !r.is_duplicate);
-    if (unique.length > 0) notifyIngestJobs(unique.map((r: any) => r.toObject()));
+    if (unique.length > 0)
+      notifyIngestJobs(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,

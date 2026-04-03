@@ -6,7 +6,7 @@ dotenv.config({
 });
 
 export const env = {
-  PORT: parseInt(process.env.PORT || "5001", 10),
+  PORT: Number.parseInt(process.env.PORT || "5001", 10),
   MONGO_URI: process.env.MONGO_URI || "mongodb://localhost:27017",
   MONGO_DB_NAME: process.env.MONGO_DB_NAME || "matchdb_data_collection",
   JWT_SECRET:

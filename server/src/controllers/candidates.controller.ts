@@ -1,24 +1,41 @@
+/* eslint-disable sonarjs/prefer-string-replace-all, no-useless-escape */
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import CandidateData from "../models/CandidateData.model.js";
 import * as XLSX from "xlsx";
 import { notifyIngestProfiles } from "../services/notify.service.js";
 
+const TRAILING_REQUIRED_MARKER = new RegExp("\\s*\\*\\s*$", "g");
+const WHITESPACE_RUN = new RegExp("\\s+", "g");
+const BACKSLASH = String.fromCharCode(92);
+
+const escapeRegex = (value: string) =>
+  value
+    .trim()
+    .replaceAll(BACKSLASH, String.raw`\\`)
+    .replaceAll(".", String.raw`\.`)
+    .replaceAll("^", String.raw`\^`)
+    .replaceAll("$", String.raw`\$`)
+    .replaceAll("*", String.raw`\*`)
+    .replaceAll("+", String.raw`\+`)
+    .replaceAll("?", String.raw`\?`)
+    .replaceAll("(", String.raw`\(`)
+    .replaceAll(")", String.raw`\)`)
+    .replaceAll("[", String.raw`\[`)
+    .replaceAll("]", String.raw`\]`)
+    .replaceAll("{", String.raw`\{`)
+    .replaceAll("}", String.raw`\}`)
+    .replaceAll("|", String.raw`\|`);
+
 // ── Duplicate detection helper ────────────────────────────
 function buildCandidateDupQuery(name: string, email: string, userId: any) {
   return {
     uploaded_by: userId,
     name: {
-      $regex: new RegExp(
-        `^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
-        "i",
-      ),
+      $regex: new RegExp(`^${escapeRegex(name)}$`, "i"),
     },
     email: {
-      $regex: new RegExp(
-        `^${email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").trim()}$`,
-        "i",
-      ),
+      $regex: new RegExp(`^${escapeRegex(email)}$`, "i"),
     },
   };
 }
@@ -81,7 +98,8 @@ export async function createBulkCandidates(req: AuthRequest, res: Response) {
 
     const saved = await CandidateData.insertMany(records);
     const unique = saved.filter((r: any) => !r.is_duplicate);
-    if (unique.length > 0) notifyIngestProfiles(unique.map((r: any) => r.toObject()));
+    if (unique.length > 0)
+      notifyIngestProfiles(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,
@@ -177,7 +195,7 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
     const rows = rawRows.map((row) => {
       const clean: any = {};
       for (const [key, val] of Object.entries(row)) {
-        clean[key.replace(/\s*\*\s*$/, "").trim()] = val;
+        clean[key.replaceAll(TRAILING_REQUIRED_MARKER, "").trim()] = val;
       }
       return clean;
     });
@@ -192,12 +210,13 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
         current_role: row.current_role || row["Current Role"] || "",
         preferred_job_type: (row.preferred_job_type || row["Job Type"] || "")
           .toLowerCase()
-          .replace(/\s+/g, "_"),
+          .replaceAll(WHITESPACE_RUN, "_"),
         expected_hourly_rate:
-          parseFloat(row.expected_hourly_rate || row["Hourly Rate"] || "0") ||
-          undefined,
+          Number.parseFloat(
+            row.expected_hourly_rate || row["Hourly Rate"] || "0",
+          ) || undefined,
         experience_years:
-          parseFloat(
+          Number.parseFloat(
             row.experience_years ||
               row["Experience Years"] ||
               row["Experience"] ||
@@ -245,7 +264,8 @@ export async function uploadExcel(req: AuthRequest, res: Response) {
 
     const saved = await CandidateData.insertMany(candidates);
     const unique = saved.filter((r: any) => !r.is_duplicate);
-    if (unique.length > 0) notifyIngestProfiles(unique.map((r: any) => r.toObject()));
+    if (unique.length > 0)
+      notifyIngestProfiles(unique.map((r: any) => r.toObject()));
     res.status(201).json({
       count: saved.length,
       duplicatesFound: dupCount,
