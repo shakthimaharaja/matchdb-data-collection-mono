@@ -1,31 +1,14 @@
-/* eslint-disable sonarjs/prefer-string-replace-all, no-useless-escape */
 import { Response } from "express";
 import { AuthRequest } from "../middleware/auth.middleware.js";
 import JobData from "../models/JobData.model.js";
 import * as XLSX from "xlsx";
 import { notifyIngestJobs } from "../services/notify.service.js";
 
-const TRAILING_REQUIRED_MARKER = new RegExp("\\s*\\*\\s*$", "g");
-const WHITESPACE_OR_DASH_RUN = new RegExp("[\\s-]+", "g");
-const BACKSLASH = String.fromCharCode(92);
+const TRAILING_REQUIRED_MARKER = /\s*\*\s*$/g;
+const WHITESPACE_OR_DASH_RUN = /[\s-]+/g;
 
 const escapeRegex = (value: string) =>
-  value
-    .trim()
-    .replaceAll(BACKSLASH, String.raw`\\`)
-    .replaceAll(".", String.raw`\.`)
-    .replaceAll("^", String.raw`\^`)
-    .replaceAll("$", String.raw`\$`)
-    .replaceAll("*", String.raw`\*`)
-    .replaceAll("+", String.raw`\+`)
-    .replaceAll("?", String.raw`\?`)
-    .replaceAll("(", String.raw`\(`)
-    .replaceAll(")", String.raw`\)`)
-    .replaceAll("[", String.raw`\[`)
-    .replaceAll("]", String.raw`\]`)
-    .replaceAll("{", String.raw`\{`)
-    .replaceAll("}", String.raw`\}`)
-    .replaceAll("|", String.raw`\|`);
+  value.trim().replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 // ── Duplicate detection helper ────────────────────────────
 function buildDuplicateQuery(
