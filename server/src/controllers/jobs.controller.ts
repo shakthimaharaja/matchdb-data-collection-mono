@@ -7,8 +7,15 @@ import { notifyIngestJobs } from "../services/notify.service.js";
 const TRAILING_REQUIRED_MARKER = /\s*\*\s*$/g;
 const WHITESPACE_OR_DASH_RUN = /[\s-]+/g;
 
+/** Escape all regex meta-characters in the given string. */
 const escapeRegex = (value: string) =>
   value.trim().replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+
+/** Build a case-insensitive anchored regex from an already-escaped value. */
+function anchoredRegex(escaped: string): RegExp {
+  const pattern = "^" + escaped + "$";
+  return new RegExp(pattern, "i");
+}
 
 // ── Duplicate detection helper ────────────────────────────
 function buildDuplicateQuery(
@@ -20,13 +27,13 @@ function buildDuplicateQuery(
   return {
     uploaded_by: userId,
     title: {
-      $regex: new RegExp(`^${escapeRegex(title)}$`, "i"),
+      $regex: anchoredRegex(escapeRegex(title)),
     },
     company: {
-      $regex: new RegExp(`^${escapeRegex(company)}$`, "i"),
+      $regex: anchoredRegex(escapeRegex(company)),
     },
     location: {
-      $regex: new RegExp(`^${escapeRegex(location)}$`, "i"),
+      $regex: anchoredRegex(escapeRegex(location)),
     },
   };
 }
