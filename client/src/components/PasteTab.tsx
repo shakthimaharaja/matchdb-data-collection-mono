@@ -272,7 +272,9 @@ function extractTitle(fullText: string, lines: string[]) {
   if (normalizedFirstLine) return normalizedFirstLine;
 
   if (lines.length > 1) {
-    return stripEmojis(lines[1]).replace(/^[-–—:]\s*/, "").trim();
+    return stripEmojis(lines[1])
+      .replace(/^[-–—:]\s*/, "")
+      .trim();
   }
 
   return "";
@@ -352,8 +354,9 @@ function extractCompensation(fullText: string) {
   const durationMatch = /(\d+)\s*(?:\+\s*)?(?:months?|mos?)\b/i.exec(fullText);
   const duration = durationMatch ? durationMatch[0].trim() : "";
 
-  const hourlyMatch =
-    /\$\s*([\d,.]+)\s*(?:\/|\s*per\s*)\s*h(?:ou)?r/i.exec(fullText);
+  const hourlyMatch = /\$\s*([\d,.]+)\s*(?:\/|\s*per\s*)\s*h(?:ou)?r/i.exec(
+    fullText,
+  );
   if (hourlyMatch) {
     pay_per_hour = Number.parseFloat(hourlyMatch[1].replaceAll(",", ""));
   }
@@ -427,9 +430,10 @@ function collectBlockSkills(
   const regex = new RegExp(pattern.source, pattern.flags);
   let match: RegExpExecArray | null;
   while ((match = regex.exec(fullText)) !== null) {
-    const rawContent = pattern === PLUS_BLOCK_RE
-      ? match[0].replace(/^[^:\n]+:\s*/, "")
-      : match[1];
+    const rawContent =
+      pattern === PLUS_BLOCK_RE
+        ? match[0].replace(/^[^:\n]+:\s*/, "")
+        : match[1];
     const tokens = tokenizeSkillContent(rawContent);
     for (const token of tokens) {
       const clean = normalizeSkillToken(token);
@@ -468,18 +472,24 @@ function extractCompany(fullText: string) {
     /(?:company|client|employer)\s*[:=]\s*([^\n|]+)/i,
   );
   if (company) return company;
-  const hiringCompanyMatch = /^\s*([A-Z][\w\s]+?)\s+is\s+hiring/im.exec(fullText);
+  const hiringCompanyMatch = /^\s*([A-Z][\w\s]+?)\s+is\s+hiring/im.exec(
+    fullText,
+  );
   return hiringCompanyMatch?.[1]?.trim() || "";
 }
 
 function buildDescription(fullText: string, lines: string[], duration: string) {
   const descriptionParts: string[] = [];
   if (duration) descriptionParts.push(`Duration: ${duration}`);
-  const descriptionLines = lines.slice(1).filter(
-    (line: string) =>
-      !line.startsWith("📍") &&
-      !/^(?:recruiter|contact|poc|email|phone)\s*[:=]/i.test(stripEmojis(line)),
-  );
+  const descriptionLines = lines
+    .slice(1)
+    .filter(
+      (line: string) =>
+        !line.startsWith("📍") &&
+        !/^(?:recruiter|contact|poc|email|phone)\s*[:=]/i.test(
+          stripEmojis(line),
+        ),
+    );
   if (descriptionLines.length) {
     descriptionParts.push(descriptionLines.join("\n"));
   }
@@ -536,8 +546,10 @@ function parseJobText(text: string) {
     /(?:recruiter|contact|poc|submitted?\s*by)\s*[:=]\s*([^\n|,]+)/i,
   );
   const recruiter_email =
-    matchFirst(full, /(?:recruiter\s*email|email)\s*[:=]\s*([\w.+-]+@[\w.-]+)/i) ||
-    matchFirst(full, /^\s*([\w.+-]+@[\w.-]+)\s*$/m);
+    matchFirst(
+      full,
+      /(?:recruiter\s*email|email)\s*[:=]\s*([\w.+-]+@[\w.-]+)/i,
+    ) || matchFirst(full, /^\s*([\w.+-]+@[\w.-]+)\s*$/m);
   const recruiter_phone = matchFirst(
     full,
     /(?:recruiter\s*phone|phone|cell|mobile)\s*[:=]\s*([\d\s()+-]{7,})/i,
