@@ -43,7 +43,7 @@ export default function LoginPage() {
               <line x1="12" y1="22.08" x2="12" y2="12" />
             </svg>
           </div>
-          <h1>MatchDB</h1>
+          <h1>MatchingDB</h1>
           <p className="login-subtitle">Data Collection Portal</p>
         </div>
 
@@ -98,24 +98,24 @@ export default function LoginPage() {
           <button
             type="button"
             className="credential-card"
-            onClick={() => fillCredentials("candidate_uploader@matchdb.com")}
+            onClick={() => fillCredentials("candidate_uploader@matchingdb.com")}
           >
             <span className="credential-icon">👤</span>
             <div className="credential-info">
               <span className="credential-role">Candidate Uploader</span>
-              <code>candidate_uploader@matchdb.com</code>
+              <code>candidate_uploader@matchingdb.com</code>
             </div>
             <span className="credential-arrow">→</span>
           </button>
           <button
             type="button"
             className="credential-card"
-            onClick={() => fillCredentials("job_uploader@matchdb.com")}
+            onClick={() => fillCredentials("job_uploader@matchingdb.com")}
           >
             <span className="credential-icon">💼</span>
             <div className="credential-info">
               <span className="credential-role">Job Uploader</span>
-              <code>job_uploader@matchdb.com</code>
+              <code>job_uploader@matchingdb.com</code>
             </div>
             <span className="credential-arrow">→</span>
           </button>

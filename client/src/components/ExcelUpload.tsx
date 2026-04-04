@@ -156,8 +156,8 @@ export default function ExcelUpload({ onUpload, type }: Props) {
                 a.href = url;
                 a.download =
                   type === "candidate"
-                    ? "MatchDB_Candidate_Template.xlsx"
-                    : "MatchDB_Job_Template.xlsx";
+                    ? "MatchingDB_Candidate_Template.xlsx"
+                    : "MatchingDB_Job_Template.xlsx";
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

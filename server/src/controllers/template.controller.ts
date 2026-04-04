@@ -160,8 +160,8 @@ export async function downloadTemplate(req: AuthRequest, res: Response) {
     const columns = type === "candidate" ? CANDIDATE_COLUMNS : JOB_COLUMNS;
     const filename =
       type === "candidate"
-        ? "MatchDB_Candidate_Template.xlsx"
-        : "MatchDB_Job_Template.xlsx";
+        ? "MatchingDB_Candidate_Template.xlsx"
+        : "MatchingDB_Job_Template.xlsx";
 
     // ── Build worksheet data ──────────────────────────────────
     // Row 1: Headers
@@ -186,7 +186,7 @@ export async function downloadTemplate(req: AuthRequest, res: Response) {
 
     // ── Instructions sheet ───────────────────────────────────
     const instructions = [
-      ["MatchDB Upload Template — Instructions"],
+      ["MatchingDB Upload Template — Instructions"],
       [""],
       ["1. Fill in the 'Data' sheet with your records (one row per record)."],
       ["2. Columns marked with * are required."],
@@ -210,7 +210,7 @@ export async function downloadTemplate(req: AuthRequest, res: Response) {
 
     instructions.push(
       [""],
-      ["6. Save the file and upload it on the Excel Upload tab in MatchDB."],
+      ["6. Save the file and upload it on the Excel Upload tab in MatchingDB."],
     );
     instructions.push(
       [""],

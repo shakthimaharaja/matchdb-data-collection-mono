@@ -1,6 +1,6 @@
-# MatchDB Data Collection
+# MatchingDB Data Collection
 
-> MERN monorepo for collecting candidate profiles and job openings that will later seed the main MatchDB Jobs database.
+> MERN monorepo for collecting candidate profiles and job openings that will later seed the main MatchingDB Jobs database.
 
 ---
 

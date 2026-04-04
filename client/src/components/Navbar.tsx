@@ -27,7 +27,7 @@ export default function Navbar() {
           <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
         <span>
-          MatchDB <span className="brand-light">Data Collection</span>
+          MatchingDB <span className="brand-light">Data Collection</span>
         </span>
       </div>
       <div className="navbar-right">
