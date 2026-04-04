@@ -26,7 +26,7 @@ No signup — accounts are pre-seeded.
 | ------------ | ------------------------------------------------------------------- |
 | **Frontend** | React 18 · Vite · TypeScript · React Router 6 · Axios               |
 | **Backend**  | Express 4 · TypeScript · Mongoose 8 · JWT · Multer · SheetJS (xlsx) |
-| **Database** | MongoDB (`matchdb_data_collection`)                                 |
+| **Database** | MongoDB (`matchingdb_data_collection`)                                 |
 | **AI Parse** | OpenAI API (optional)                                               |
 | **Monorepo** | npm workspaces · concurrently                                       |
 
@@ -234,7 +234,7 @@ Create `server/.env`:
 
 ```env
 MONGO_URI=mongodb://localhost:27017
-MONGO_DB_NAME=matchdb_data_collection
+MONGO_DB_NAME=matchingdb_data_collection
 JWT_SECRET=your-jwt-secret
 PORT=5001
 CORS_ORIGINS=http://localhost:5173

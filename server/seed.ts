@@ -9,7 +9,7 @@ dotenv.config({
 });
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017";
-const MONGO_DB_NAME = process.env.MONGO_DB_NAME || "matchdb_data_collection";
+const MONGO_DB_NAME = process.env.MONGO_DB_NAME || "matchingdb_data_collection";
 
 /* ── Inline schemas (so seed.ts works standalone with tsx) ── */
 const UserSchema = new mongoose.Schema(
