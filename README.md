@@ -26,7 +26,7 @@ No signup — accounts are pre-seeded.
 | ------------ | ------------------------------------------------------------------- |
 | **Frontend** | React 18 · Vite · TypeScript · React Router 6 · Axios               |
 | **Backend**  | Express 4 · TypeScript · Mongoose 8 · JWT · Multer · SheetJS (xlsx) |
-| **Database** | MongoDB (`matchingdb_data_collection`)                                 |
+| **Database** | MongoDB (`matchingdb_data_collection`)                              |
 | **AI Parse** | OpenAI API (optional)                                               |
 | **Monorepo** | npm workspaces · concurrently                                       |
 
